@@ -140,9 +140,19 @@ jobs:
     - name: Build Alpine package
       run: |
         sudo -u builder bash -c "
+          set -x  # Enable debug output
           cd $GITHUB_WORKSPACE
+          echo \"=== Current directory contents ===\"
+          ls -la
+          echo \"=== Checking build-package.sh ===\"
           chmod +x build-package.sh
-          ./build-package.sh --apk
+          echo \"=== Running build-package.sh with --apk ===\"
+          ./build-package.sh --apk || {
+            echo \"=== Build failed with exit code: \$? ===\"
+            echo \"=== Last 50 lines of build output ===\"
+            tail -50 build.log 2>/dev/null || echo \"No build.log found\"
+            exit 1
+          }
         "
 
     - name: Upload Alpine package

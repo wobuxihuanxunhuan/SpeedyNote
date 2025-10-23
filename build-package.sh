@@ -853,6 +853,7 @@ create_apk_package() {
     echo -e "${YELLOW}Creating Alpine package...${NC}"
     
     # Create source tarball first in current directory
+    echo "Creating source tarball..."
     tar -czf "${PKGNAME}-${PKGVER}.tar.gz" \
         --warning=no-file-changed \
         --exclude=build \
@@ -862,19 +863,34 @@ create_apk_package() {
         --exclude="*.deb" \
         --exclude="*.pkg.tar.zst" \
         --exclude="*.apk" \
-        .
+        . 2>&1 | tee -a build.log
+    
+    if [[ ! -f "${PKGNAME}-${PKGVER}.tar.gz" ]]; then
+        echo -e "${RED}Error: Failed to create source tarball${NC}"
+        return 1
+    fi
     
     # Calculate checksum
+    echo "Calculating checksum..."
     CHECKSUM=$(sha256sum "${PKGNAME}-${PKGVER}.tar.gz" | cut -d' ' -f1)
+    echo "Checksum: $CHECKSUM"
     
     # Create Alpine package structure
+    echo "Creating alpine-pkg directory..."
     mkdir -p alpine-pkg
     cd alpine-pkg
     
     # Move source tarball to alpine-pkg directory
+    echo "Moving source tarball to alpine-pkg..."
     mv "../${PKGNAME}-${PKGVER}.tar.gz" .
     
+    if [[ ! -f "${PKGNAME}-${PKGVER}.tar.gz" ]]; then
+        echo -e "${RED}Error: Source tarball not found in alpine-pkg${NC}"
+        return 1
+    fi
+    
     # Create APKBUILD
+    echo "Creating APKBUILD file..."
     cat > APKBUILD << EOF
 # Maintainer: $MAINTAINER
 pkgname=$PKGNAME
