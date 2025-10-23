@@ -8,6 +8,9 @@ on:
 jobs:
   build-debian:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64, armhf]
     container: debian:bookworm
     
     steps:
@@ -21,22 +24,39 @@ jobs:
           qt6-base-dev qt6-tools-dev libpoppler-qt6-dev \
           libsdl2-dev libasound2-dev
 
-    - name: Build Debian package
+    - name: Setup cross-compilation environment for ${{ matrix.arch }}
+      run: |
+        # Install cross-compilation tools
+        apt-get install -y crossbuild-essential-${{ matrix.arch }} \
+          libqt6core6:${{ matrix.arch }} libqt6gui6:${{ matrix.arch }} \
+          libqt6widgets6:${{ matrix.arch }} libpoppler-qt6-3:${{ matrix.arch }} \
+          libsdl2-2.0-0:${{ matrix.arch }} libasound2:${{ matrix.arch }}
+        
+        # Set architecture-specific environment
+        export DEB_BUILD_ARCH=${{ matrix.arch }}
+        export DEB_HOST_ARCH=${{ matrix.arch }}
+
+    - name: Build Debian package for ${{ matrix.arch }}
       run: |
         pwd
         ls -la
         chmod +x build-package.sh
+        # Set architecture for the build script
+        export PKGARCH=${{ matrix.arch }}
         ./build-package.sh --deb
 
-    - name: Upload Debian package
+    - name: Upload Debian package for ${{ matrix.arch }}
       uses: actions/upload-artifact@v4
       with:
-        name: debian-package
+        name: debian-package-${{ matrix.arch }}
         path: "*.deb"
         retention-days: 30
 
   build-fedora:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64, armv7hl]
     container: fedora:latest
     
     steps:
@@ -49,17 +69,30 @@ jobs:
           qt6-qtbase-devel qt6-qttools-devel poppler-qt6-devel \
           SDL2-devel alsa-lib-devel
 
-    - name: Build Fedora package
+    - name: Setup cross-compilation environment for ${{ matrix.arch }}
+      run: |
+        # Install cross-compilation tools
+        dnf install -y gcc-${{ matrix.arch }}-linux-gnu glibc-devel.${{ matrix.arch }} \
+          qt6-qtbase-devel.${{ matrix.arch }} qt6-qttools-devel.${{ matrix.arch }} \
+          poppler-qt6-devel.${{ matrix.arch }} SDL2-devel.${{ matrix.arch }} \
+          alsa-lib-devel.${{ matrix.arch }}
+        
+        # Set architecture-specific environment
+        export RPM_BUILD_ARCH=${{ matrix.arch }}
+
+    - name: Build Fedora package for ${{ matrix.arch }}
       run: |
         pwd
         ls -la
         chmod +x build-package.sh
+        # Set architecture for the build script
+        export PKGARCH=${{ matrix.arch }}
         ./build-package.sh --rpm
 
-    - name: Upload Fedora package
+    - name: Upload Fedora package for ${{ matrix.arch }}
       uses: actions/upload-artifact@v4
       with:
-        name: fedora-package
+        name: fedora-package-${{ matrix.arch }}
         path: "*.rpm"
         retention-days: 30
 
