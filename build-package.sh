@@ -852,12 +852,9 @@ EOF
 create_apk_package() {
     echo -e "${YELLOW}Creating Alpine package...${NC}"
     
-    # Wait 20 seconds for filesystem sync before building
-    echo -e "${YELLOW}Waiting 20 seconds for filesystem sync...${NC}"
-    sleep 20
-    
     # Create source tarball first in current directory
     tar -czf "${PKGNAME}-${PKGVER}.tar.gz" \
+        --warning=no-file-changed \
         --exclude=build \
         --exclude=.git* \
         --exclude=alpine-pkg \
