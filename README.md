@@ -38,25 +38,50 @@ vintage hardware._
 
 ### ✅ Requirements
 
-- Windows 7/8/10/11/Ubuntu/Debian/Fedora/RedHat/ArchLinux/AlpineLinux
-- Qt 5 or Qt 6 runtime (bundled in Windows releases)
-- Stylus input (Wacom recommended)
+- **Windows**: 7/8/10/11 (x86_64, ARM64)
+- **Linux**: Ubuntu/Debian/Fedora/RedHat/ArchLinux/AlpineLinux (x86_64, ARM64, ARMv7)
+- **Runtime**: Qt 6 (bundled in Windows releases)
+- **Input**: Stylus input (Wacom recommended), Joy-Con controller support
 
-🛠️ Usage
+### 📦 Installation
 
-1. Launch `SpeedyNote` shortcut on desktop
-2. Click `Open PDF` to annotate a PDF document or click `New` to create a new notebook without loading a PDF.
-3. Start writing/drawing using your stylus
-4. Use the **MagicDial** or **Joy-Con** to change tools, zoom, scroll, or switch pages
-5. Click the `×` on the tab and save the notebook as a `.spn` package
+#### Linux Packages
+Pre-built packages are available for multiple architectures:
 
-###### OR
+**Debian/Ubuntu (.deb):**
+```bash
+sudo dpkg -i speedynote_*_amd64.deb    # For x86_64
+sudo dpkg -i speedynote_*_arm64.deb    # For ARM64
+sudo dpkg -i speedynote_*_armhf.deb    # For ARMv7
+```
 
-1. Right click a PDF file in File Explorer (or equivalent)
-2. Click open with and select SpeedyNote
-3. Create an `spn` notebook package in the directory of the PDF file
-4. Next time when you double click the `spr` notebook, all the notes with the PDF background will be loaded.
-5. Start writing/drawing using your stylus
+**Fedora/RHEL (.rpm):**
+```bash
+sudo rpm -i speedynote-*-x86_64.rpm    # For x86_64
+sudo rpm -i speedynote-*-aarch64.rpm   # For ARM64
+sudo rpm -i speedynote-*-armv7hl.rpm   # For ARMv7
+```
+
+**Arch Linux (.pkg.tar.zst):**
+```bash
+sudo pacman -U speedynote-*-x86_64.pkg.tar.zst    # For x86_64
+sudo pacman -U speedynote-*-aarch64.pkg.tar.zst   # For ARM64
+```
+
+### 🛠️ Usage
+
+1. **Launch** `SpeedyNote` from your applications menu or desktop shortcut
+2. **Create/Open**: Click `Open PDF` to annotate a PDF or `New` for a blank notebook
+3. **Draw**: Start writing/drawing using your stylus
+4. **Control**: Use the **MagicDial** or **Joy-Con** for tools, zoom, and page navigation
+5. **Save**: Close tabs to save as portable `.spn` packages
+
+#### Alternative Workflow
+
+1. **Right-click** any PDF file in your file manager
+2. **Select** "Open with SpeedyNote"
+3. **Automatically** create and open a `.spn` notebook package
+4. **Reload**: Double-click the `.spn` file to resume editing with PDF background
 
 ---
 
