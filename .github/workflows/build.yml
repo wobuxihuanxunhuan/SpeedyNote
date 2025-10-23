@@ -120,18 +120,13 @@ jobs:
 
     - name: Generate Alpine signing key
       run: |
-        # Switch to builder user and generate keys
+        # Switch to builder user and generate keys using abuild-keygen
         sudo -u builder bash -c "
           cd /home/builder
-          mkdir -p .abuild
-          # Generate RSA key pair for package signing
-          openssl genrsa -out .abuild/speedynote-ci.rsa 2048
-          openssl rsa -in .abuild/speedynote-ci.rsa -pubout -out .abuild/speedynote-ci.rsa.pub
-          # Create abuild.conf with key path
-          echo 'PACKAGER_PRIVKEY=\"/home/builder/.abuild/speedynote-ci.rsa\"' > .abuild/abuild.conf
-          chmod 600 .abuild/speedynote-ci.rsa
-          chmod 644 .abuild/speedynote-ci.rsa.pub
-          chmod 644 .abuild/abuild.conf
+          # Generate keys using abuild-keygen (this sets up everything correctly)
+          abuild-keygen -a -n
+          # Verify keys were created
+          ls -la .abuild/
         "
 
     - name: Debug workspace
