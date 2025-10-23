@@ -852,13 +852,8 @@ EOF
 create_apk_package() {
     echo -e "${YELLOW}Creating Alpine package...${NC}"
     
-    # Create Alpine package structure
-    mkdir -p alpine-pkg
-    cd alpine-pkg
-    
-    # Create source tarball first to calculate checksum
-    cd ..
-    tar -czf "alpine-pkg/${PKGNAME}-${PKGVER}.tar.gz" \
+    # Create source tarball first
+    tar -czf "${PKGNAME}-${PKGVER}.tar.gz" \
         --exclude=build \
         --exclude=.git* \
         --exclude=alpine-pkg \
@@ -868,10 +863,15 @@ create_apk_package() {
         --exclude="*.apk" \
         .
     
-    cd alpine-pkg
-    
     # Calculate checksum
     CHECKSUM=$(sha256sum "${PKGNAME}-${PKGVER}.tar.gz" | cut -d' ' -f1)
+    
+    # Create Alpine package structure
+    mkdir -p alpine-pkg
+    cd alpine-pkg
+    
+    # Move source tarball to alpine-pkg directory
+    mv "../${PKGNAME}-${PKGVER}.tar.gz" .
     
     # Create APKBUILD
     cat > APKBUILD << EOF
