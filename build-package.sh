@@ -16,7 +16,12 @@ NC='\033[0m' # No Color
 PKGNAME="speedynote"
 PKGVER="0.10.5"
 PKGREL="1"
-PKGARCH=$(uname -m)
+# Use environment variable if set, otherwise detect
+if [ -n "$PKGARCH" ]; then
+    PKGARCH="$PKGARCH"
+else
+    PKGARCH=$(uname -m)
+fi
 MAINTAINER="SpeedyNote Team"
 DESCRIPTION="A fast note-taking application with PDF annotation support and controller input"
 URL="https://github.com/alpha-liu-01/SpeedyNote"
@@ -533,11 +538,27 @@ create_deb_package() {
     mkdir -p "$PKG_DIR/usr/share/doc/$PKGNAME"
     mkdir -p "$PKG_DIR/usr/share/mime/packages"
     
+    # Map architecture names for Debian
+    case "$PKGARCH" in
+        amd64)
+            DEB_ARCH="amd64"
+            ;;
+        arm64)
+            DEB_ARCH="arm64"
+            ;;
+        armhf)
+            DEB_ARCH="armhf"
+            ;;
+        *)
+            DEB_ARCH="$PKGARCH"
+            ;;
+    esac
+    
     # Create control file
     cat > "$PKG_DIR/DEBIAN/control" << EOF
 Package: $PKGNAME
 Version: $PKGVER-$PKGREL
-Architecture: $(dpkg --print-architecture)
+Architecture: $DEB_ARCH
 Maintainer: $MAINTAINER
 Depends: $(get_dependencies deb)
 Section: editors
@@ -607,9 +628,9 @@ EOF
     create_mime_xml "$PKG_DIR/usr/share/mime/packages/application-x-speedynote-package.xml"
     
     # Build package
-    dpkg-deb --build "$PKG_DIR" "${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb"
+    dpkg-deb --build "$PKG_DIR" "${PKGNAME}_${PKGVER}-${PKGREL}_${DEB_ARCH}.deb"
 
-    echo -e "${GREEN}DEB package created: ${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb${NC}"
+    echo -e "${GREEN}DEB package created: ${PKGNAME}_${PKGVER}-${PKGREL}_${DEB_ARCH}.deb${NC}"
 }
 
 # Function to create RPM package
@@ -732,8 +753,24 @@ EOF
     # Build RPM
     rpmbuild -ba ~/rpmbuild/SPECS/${PKGNAME}.spec
     
+    # Map architecture names for RPM
+    case "$PKGARCH" in
+        x86_64)
+            RPM_ARCH="x86_64"
+            ;;
+        aarch64)
+            RPM_ARCH="aarch64"
+            ;;
+        armv7hl)
+            RPM_ARCH="armv7hl"
+            ;;
+        *)
+            RPM_ARCH="$PKGARCH"
+            ;;
+    esac
+    
     # Copy to current directory
-    cp ~/rpmbuild/RPMS/${PKGARCH}/${PKGNAME}-${PKGVER}-${PKGREL}.*.rpm .
+    cp ~/rpmbuild/RPMS/${RPM_ARCH}/${PKGNAME}-${PKGVER}-${PKGREL}.*.rpm .
     
     echo -e "${GREEN}RPM package created: ${PKGNAME}-${PKGVER}-${PKGREL}.*.rpm${NC}"
 }
@@ -841,7 +878,29 @@ EOF
     # Build package
     makepkg -f
     
-    echo -e "${GREEN}Arch package created: ${PKGNAME}-${PKGVER}-${PKGREL}-${PKGARCH}.pkg.tar.zst${NC}"
+    # Map architecture names for Arch
+    case "$PKGARCH" in
+        x86_64)
+            ARCH_ARCH="x86_64"
+            ;;
+        aarch64)
+            ARCH_ARCH="aarch64"
+            ;;
+        armv7hl)
+            ARCH_ARCH="armv7hl"
+            ;;
+        amd64)
+            ARCH_ARCH="x86_64"
+            ;;
+        arm64)
+            ARCH_ARCH="aarch64"
+            ;;
+        *)
+            ARCH_ARCH="$PKGARCH"
+            ;;
+    esac
+    
+    echo -e "${GREEN}Arch package created: ${PKGNAME}-${PKGVER}-${PKGREL}-${ARCH_ARCH}.pkg.tar.zst${NC}"
 }
 
 # Function to create Alpine package
@@ -955,7 +1014,29 @@ EOF
     abuild -r
     
     cd ..
-    echo -e "${GREEN}Alpine package created in ~/packages/alpine-pkg/${PKGNAME}/ for .apk file"
+    # Map architecture names for Alpine
+    case "$PKGARCH" in
+        x86_64)
+            APK_ARCH="x86_64"
+            ;;
+        aarch64)
+            APK_ARCH="aarch64"
+            ;;
+        armv7hl)
+            APK_ARCH="armv7hl"
+            ;;
+        amd64)
+            APK_ARCH="x86_64"
+            ;;
+        arm64)
+            APK_ARCH="aarch64"
+            ;;
+        *)
+            APK_ARCH="$PKGARCH"
+            ;;
+    esac
+    
+    echo -e "${GREEN}Alpine package created in ~/packages/alpine-pkg/${PKGNAME}/ for .apk file (${APK_ARCH})"
 }
 
 # Function to clean up
