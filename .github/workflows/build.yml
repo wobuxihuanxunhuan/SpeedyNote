@@ -103,8 +103,104 @@ jobs:
         path: "*.pkg.tar.zst"
         retention-days: 30
 
+  build-flatpak:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 获取完整历史记录，便于版本检测
+
+    - name: Install Flatpak and dependencies
+      run: |
+        dnf install -y flatpak flatpak-builder git sudo wget ninja-build
+        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+    - name: Install required runtimes
+      run: |
+        flatpak install -y flathub org.freedesktop.Sdk//23.08
+        flatpak install -y flathub org.freedesktop.Platform//23.08
+
+    - name: Create Flatpak manifest
+      run: |
+        # 从标签中提取版本号
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "Building version: $VERSION"
+        
+        cat > io.github.speedynote.SpeedyNote.json << EOF
+{
+  "app-id": "io.github.speedynote.SpeedyNote",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "23.08",
+  "sdk": "org.freedesktop.Sdk",
+  "sdk-extensions": ["org.freedesktop.Sdk.Extension.qt6"],
+  "command": "speedynote",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=wayland",
+    "--socket=x11",
+    "--device=all",
+    "--filesystem=home",
+    "--filesystem=xdg-documents",
+    "--talk-name=org.freedesktop.Notifications"
+  ],
+  "build-options": {
+    "cflags": "-O2 -g",
+    "cxxflags": "-O2 -g",
+    "env": {
+      "QT_QPA_PLATFORM": "xcb"
+    }
+  },
+  "modules": [
+    {
+      "name": "SpeedyNote",
+      "buildsystem": "cmake-ninja",
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=/app"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "."
+        }
+      ],
+      "post-install": [
+        "install -Dm644 resources/icons/mainicon.png /app/share/icons/hicolor/512x512/apps/io.github.speedynote.SpeedyNote.png",
+        "install -Dm644 /dev/stdin /app/share/applications/io.github.speedynote.SpeedyNote.desktop << DESKTOP\n[Desktop Entry]\nVersion=1.0\nType=Application\nName=SpeedyNote\nComment=A fast note-taking application with PDF annotation support\nExec=speedynote %F\nIcon=io.github.speedynote.SpeedyNote\nTerminal=false\nStartupNotify=true\nCategories=Office;Education;\nKeywords=notes;pdf;annotation;writing;package;\nMimeType=application/pdf;application/x-speedynote-package;\nDESKTOP",
+        "install -Dm644 /dev/stdin /app/share/mime/packages/io.github.speedynote.SpeedyNote.xml << MIME\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<mime-info xmlns=\"http://www.freedesktop.org/standards/shared-mime-info\">\n    <mime-type type=\"application/x-speedynote-package\">\n        <comment>SpeedyNote Package</comment>\n        <icon name=\"io.github.speedynote.SpeedyNote\"/>\n        <glob pattern=\"*.spn\"/>\n    </mime-type>\n</mime-info>\nMIME"
+      ]
+    }
+  ]
+}
+EOF
+
+    - name: Build Flatpak bundle
+      run: |
+        # 从标签中提取版本号
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "Building Flatpak bundle for version: $VERSION"
+        
+        # 构建应用到仓库
+        flatpak-builder --repo=repo --force-clean build-dir io.github.speedynote.SpeedyNote.json
+        
+        # 创建可安装的捆绑包
+        flatpak build-bundle repo speedynote-${VERSION}.flatpak io.github.speedynote.SpeedyNote
+        
+        # 验证捆绑包
+        flatpak info --show-metadata speedynote-${VERSION}.flatpak
+
+    - name: Upload Flatpak bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: flatpak-bundle
+        path: "*.flatpak"
+        retention-days: 30
+
   create-release:
-    needs: [build-debian, build-fedora, build-archlinux]
+    needs: [build-debian, build-fedora, build-archlinux, build-flatpak]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -150,6 +246,14 @@ jobs:
             cp "$arch_file" "artifacts/$filename"
           fi
         done
+        
+        # Copy Flatpak bundle
+        for flatpak_file in artifacts/flatpak-bundle/*.flatpak; do
+          if [ -f "$flatpak_file" ]; then
+            filename=$(basename "$flatpak_file")
+            cp "$flatpak_file" "artifacts/$filename"
+          fi
+        done
 
     - name: List final artifacts
       run: find artifacts -maxdepth 1 -type f -name "*" | sort
@@ -161,5 +265,6 @@ jobs:
           artifacts/*.deb
           artifacts/*.rpm
           artifacts/*.pkg.tar.zst
+          artifacts/*.flatpak
         draft: false
         prerelease: false
