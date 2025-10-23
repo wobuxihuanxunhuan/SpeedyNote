@@ -97,8 +97,75 @@ jobs:
         path: "*.pkg.tar.zst"
         retention-days: 30
 
+  build-debian-multiarch:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    container:
+      image: debian:bookworm
+      options: --platform linux/${{ matrix.arch }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y cmake make pkg-config git sudo devscripts \
+          qt6-base-dev qt6-tools-dev libpoppler-qt6-dev \
+          libsdl2-dev libasound2-dev
+
+    - name: Build Debian package
+      run: |
+        pwd
+        ls -la
+        chmod +x build-package.sh
+        ./build-package.sh --deb
+
+    - name: Upload Debian package
+      uses: actions/upload-artifact@v4
+      with:
+        name: debian-package-${{ matrix.arch }}
+        path: "*.deb"
+        retention-days: 30
+
+  build-fedora-multiarch:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+    container:
+      image: fedora:latest
+      options: --platform linux/${{ matrix.arch }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        dnf install -y cmake make pkg-config git sudo rpm-build rpm-devel \
+          qt6-qtbase-devel qt6-qttools-devel poppler-qt6-devel \
+          SDL2-devel alsa-lib-devel
+
+    - name: Build Fedora package
+      run: |
+        pwd
+        ls -la
+        chmod +x build-package.sh
+        ./build-package.sh --rpm
+
+    - name: Upload Fedora package
+      uses: actions/upload-artifact@v4
+      with:
+        name: fedora-package-${{ matrix.arch }}
+        path: "*.rpm"
+        retention-days: 30
+
   create-release:
-    needs: [build-debian, build-fedora, build-archlinux]
+    needs: [build-debian, build-fedora, build-archlinux, build-debian-multiarch, build-fedora-multiarch]
     runs-on: ubuntu-latest
     permissions:
       contents: write
