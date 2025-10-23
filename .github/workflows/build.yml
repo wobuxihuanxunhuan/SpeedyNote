@@ -118,6 +118,22 @@ jobs:
         chown -R builder:builder $GITHUB_WORKSPACE
         echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
+    - name: Generate Alpine signing key
+      run: |
+        # Switch to builder user and generate keys
+        sudo -u builder bash -c "
+          cd /home/builder
+          mkdir -p .abuild
+          # Generate RSA key pair for package signing
+          openssl genrsa -out .abuild/speedynote-ci.rsa 2048
+          openssl rsa -in .abuild/speedynote-ci.rsa -pubout -out .abuild/speedynote-ci.rsa.pub
+          # Create abuild.conf with key path
+          echo 'PACKAGER_PRIVKEY=\"/home/builder/.abuild/speedynote-ci.rsa\"' > .abuild/abuild.conf
+          chmod 600 .abuild/speedynote-ci.rsa
+          chmod 644 .abuild/speedynote-ci.rsa.pub
+          chmod 644 .abuild/abuild.conf
+        "
+
     - name: Debug workspace
       run: |
         echo "Current directory: $(pwd)"
@@ -131,8 +147,7 @@ jobs:
         sudo -u builder bash -c "
           cd $GITHUB_WORKSPACE
           chmod +x build-package.sh
-          # Use -F flag to skip signing in CI environment
-          ./build-package.sh --apk --no-sign
+          ./build-package.sh --apk
         "
 
     - name: Upload Alpine package
