@@ -129,7 +129,7 @@ jobs:
         VERSION=${GITHUB_REF#refs/tags/v}
         echo "Building version: $VERSION"
         
-        cat > io.github.speedynote.SpeedyNote.json << 'EOF'
+        cat > io.github.speedynote.SpeedyNote.json << 'ENDOFFILE'
 {
   "app-id": "io.github.speedynote.SpeedyNote",
   "runtime": "org.freedesktop.Platform",
@@ -146,20 +146,6 @@ jobs:
   ],
   "modules": [
     {
-      "name": "qt6-base",
-      "buildsystem": "simple",
-      "build-commands": [
-        "flatpak build --with-sdk /usr/lib/sdk/org.freedesktop.Sdk.Extension.qt6/install.sh"
-      ],
-      "sources": [
-        {
-          "type": "script",
-          "dest-filename": "install-qt6.sh",
-          "commands": ["echo 'Qt6 extension installed'"]
-        }
-      ]
-    },
-    {
       "name": "speedynote",
       "buildsystem": "cmake-ninja",
       "config-opts": [
@@ -175,7 +161,7 @@ jobs:
     }
   ]
 }
-EOF
+ENDOFFILE
 
     - name: Build Flatpak bundle
       run: |
