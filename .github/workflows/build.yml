@@ -129,7 +129,7 @@ jobs:
         VERSION=${GITHUB_REF#refs/tags/v}
         echo "Building version: $VERSION"
         
-        cat > io.github.speedynote.SpeedyNote.json << 'ENDOFFILE'
+        cat > io.github.speedynote.SpeedyNote.json << 'EOF'
 {
   "app-id": "io.github.speedynote.SpeedyNote",
   "runtime": "org.freedesktop.Platform",
@@ -161,7 +161,7 @@ jobs:
     }
   ]
 }
-ENDOFFILE
+EOF
 
     - name: Build Flatpak bundle
       run: |
