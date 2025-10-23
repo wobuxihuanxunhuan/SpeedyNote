@@ -16,7 +16,12 @@ NC='\033[0m' # No Color
 PKGNAME="speedynote"
 PKGVER="0.10.5"
 PKGREL="1"
-PKGARCH=$(uname -m)
+# Detect architecture from environment or use uname as fallback
+if [[ -n "$ARCH" ]]; then
+    PKGARCH="$ARCH"
+else
+    PKGARCH=$(uname -m)
+fi
 MAINTAINER="SpeedyNote Team"
 DESCRIPTION="A fast note-taking application with PDF annotation support and controller input"
 URL="https://github.com/alpha-liu-01/SpeedyNote"
@@ -537,7 +542,7 @@ create_deb_package() {
     cat > "$PKG_DIR/DEBIAN/control" << EOF
 Package: $PKGNAME
 Version: $PKGVER-$PKGREL
-Architecture: $(dpkg --print-architecture)
+Architecture: $PKGARCH
 Maintainer: $MAINTAINER
 Depends: $(get_dependencies deb)
 Section: editors
@@ -607,9 +612,9 @@ EOF
     create_mime_xml "$PKG_DIR/usr/share/mime/packages/application-x-speedynote-package.xml"
     
     # Build package
-    dpkg-deb --build "$PKG_DIR" "${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb"
+    dpkg-deb --build "$PKG_DIR" "${PKGNAME}_${PKGVER}-${PKGREL}_${PKGARCH}.deb"
 
-    echo -e "${GREEN}DEB package created: ${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb${NC}"
+    echo -e "${GREEN}DEB package created: ${PKGNAME}_${PKGVER}-${PKGREL}_${PKGARCH}.deb${NC}"
 }
 
 # Function to create RPM package
@@ -972,6 +977,7 @@ show_package_info() {
     echo -e "${CYAN}=== Package Information ===${NC}"
     echo -e "Package name: ${PKGNAME}"
     echo -e "Version: ${PKGVER}-${PKGREL}"
+    echo -e "Architecture: ${PKGARCH}"
     echo -e "Formats created: ${PACKAGE_FORMATS[*]}"
     echo -e "PDF file association: Enabled"
     echo
@@ -980,8 +986,8 @@ show_package_info() {
     for format in "${PACKAGE_FORMATS[@]}"; do
         case $format in
             deb)
-                if [[ -f "${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb" ]]; then
-                    echo -e "DEB: ${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb ($(du -h "${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb" | cut -f1))"
+                if [[ -f "${PKGNAME}_${PKGVER}-${PKGREL}_${PKGARCH}.deb" ]]; then
+                    echo -e "DEB: ${PKGNAME}_${PKGVER}-${PKGREL}_${PKGARCH}.deb ($(du -h "${PKGNAME}_${PKGVER}-${PKGREL}_${PKGARCH}.deb" | cut -f1))"
                 fi
                 ;;
             rpm)
