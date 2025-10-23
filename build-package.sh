@@ -65,6 +65,10 @@ while [[ $# -gt 0 ]]; do
             AUTO_DETECT=false
             shift
             ;;
+        --no-sign)
+            NO_SIGN=true
+            shift
+            ;;
         --all)
             PACKAGE_FORMATS=("deb" "rpm" "arch" "apk")
             AUTO_DETECT=false
@@ -952,10 +956,23 @@ exit 0
 EOF
     
     # Build package (source tarball already created above)
-    abuild -r
+    if [[ "$NO_SIGN" == "true" ]]; then
+        echo -e "${YELLOW}Skipping package signing (CI environment)...${NC}"
+        abuild -F -r
+    else
+        abuild -r
+    fi
+    
+    # Find and copy the .apk file to current directory
+    APK_FILE=$(find ~/packages -name "*.apk" -type f | head -1)
+    if [[ -n "$APK_FILE" ]]; then
+        cp "$APK_FILE" ..
+        echo -e "${GREEN}Alpine package created: $(basename "$APK_FILE")${NC}"
+    else
+        echo -e "${YELLOW}Warning: Could not find generated .apk file${NC}"
+    fi
     
     cd ..
-    echo -e "${GREEN}Alpine package created in ~/packages/alpine-pkg/${PKGNAME}/ for .apk file"
 }
 
 # Function to clean up

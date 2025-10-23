@@ -131,7 +131,8 @@ jobs:
         sudo -u builder bash -c "
           cd $GITHUB_WORKSPACE
           chmod +x build-package.sh
-          ./build-package.sh --apk
+          # Use -F flag to skip signing in CI environment
+          ./build-package.sh --apk --no-sign
         "
 
     - name: Upload Alpine package
