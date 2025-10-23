@@ -108,7 +108,7 @@ jobs:
     - name: Install dependencies
       run: |
         apk update
-        apk add cmake make pkgconf git sudo alpine-sdk abuild \
+        apk add bash cmake make pkgconf git sudo alpine-sdk abuild \
           qt6-qtbase-dev qt6-qttools-dev poppler-qt5-dev \
           poppler-qt6 sdl2-dev alsa-lib-dev
 
