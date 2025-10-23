@@ -142,6 +142,9 @@ jobs:
         sudo -u builder bash -c "
           cd $GITHUB_WORKSPACE
           chmod +x build-package.sh
+          # Wait 20 seconds for filesystem sync before building
+          echo \"Waiting 20 seconds for filesystem sync...\"
+          sleep 20
           ./build-package.sh --apk
         "
 
