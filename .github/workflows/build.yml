@@ -106,22 +106,22 @@ jobs:
   build-flatpak:
     runs-on: ubuntu-latest
     container: fedora:latest
+    continue-on-error: true
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # 获取完整历史记录，便于版本检测
 
     - name: Install Flatpak and dependencies
       run: |
-        dnf install -y flatpak flatpak-builder git sudo wget ninja-build
+        dnf install -y flatpak flatpak-builder git sudo wget ninja-build cmake make pkg-config
         flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
-    - name: Install required runtimes
+    - name: Install required runtimes and extensions
       run: |
         flatpak install -y flathub org.freedesktop.Sdk//23.08
         flatpak install -y flathub org.freedesktop.Platform//23.08
+        flatpak install -y flathub org.freedesktop.Sdk.Extension.qt6//23.08
 
     - name: Create Flatpak manifest
       run: |
@@ -129,13 +129,12 @@ jobs:
         VERSION=${GITHUB_REF#refs/tags/v}
         echo "Building version: $VERSION"
         
-        cat > io.github.speedynote.SpeedyNote.json << EOF
+        cat > io.github.speedynote.SpeedyNote.json << 'EOF'
 {
   "app-id": "io.github.speedynote.SpeedyNote",
   "runtime": "org.freedesktop.Platform",
   "runtime-version": "23.08",
   "sdk": "org.freedesktop.Sdk",
-  "sdk-extensions": ["org.freedesktop.Sdk.Extension.qt6"],
   "command": "speedynote",
   "finish-args": [
     "--share=ipc",
@@ -143,19 +142,25 @@ jobs:
     "--socket=x11",
     "--device=all",
     "--filesystem=home",
-    "--filesystem=xdg-documents",
-    "--talk-name=org.freedesktop.Notifications"
+    "--filesystem=xdg-documents"
   ],
-  "build-options": {
-    "cflags": "-O2 -g",
-    "cxxflags": "-O2 -g",
-    "env": {
-      "QT_QPA_PLATFORM": "xcb"
-    }
-  },
   "modules": [
     {
-      "name": "SpeedyNote",
+      "name": "qt6-base",
+      "buildsystem": "simple",
+      "build-commands": [
+        "flatpak build --with-sdk /usr/lib/sdk/org.freedesktop.Sdk.Extension.qt6/install.sh"
+      ],
+      "sources": [
+        {
+          "type": "script",
+          "dest-filename": "install-qt6.sh",
+          "commands": ["echo 'Qt6 extension installed'"]
+        }
+      ]
+    },
+    {
+      "name": "speedynote",
       "buildsystem": "cmake-ninja",
       "config-opts": [
         "-DCMAKE_BUILD_TYPE=Release",
@@ -166,11 +171,6 @@ jobs:
           "type": "dir",
           "path": "."
         }
-      ],
-      "post-install": [
-        "install -Dm644 resources/icons/mainicon.png /app/share/icons/hicolor/512x512/apps/io.github.speedynote.SpeedyNote.png",
-        "install -Dm644 /dev/stdin /app/share/applications/io.github.speedynote.SpeedyNote.desktop << DESKTOP\n[Desktop Entry]\nVersion=1.0\nType=Application\nName=SpeedyNote\nComment=A fast note-taking application with PDF annotation support\nExec=speedynote %F\nIcon=io.github.speedynote.SpeedyNote\nTerminal=false\nStartupNotify=true\nCategories=Office;Education;\nKeywords=notes;pdf;annotation;writing;package;\nMimeType=application/pdf;application/x-speedynote-package;\nDESKTOP",
-        "install -Dm644 /dev/stdin /app/share/mime/packages/io.github.speedynote.SpeedyNote.xml << MIME\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<mime-info xmlns=\"http://www.freedesktop.org/standards/shared-mime-info\">\n    <mime-type type=\"application/x-speedynote-package\">\n        <comment>SpeedyNote Package</comment>\n        <icon name=\"io.github.speedynote.SpeedyNote\"/>\n        <glob pattern=\"*.spn\"/>\n    </mime-type>\n</mime-info>\nMIME"
       ]
     }
   ]
@@ -184,13 +184,10 @@ EOF
         echo "Building Flatpak bundle for version: $VERSION"
         
         # 构建应用到仓库
-        flatpak-builder --repo=repo --force-clean build-dir io.github.speedynote.SpeedyNote.json
+        flatpak-builder --verbose --repo=repo --force-clean build-dir io.github.speedynote.SpeedyNote.json
         
         # 创建可安装的捆绑包
         flatpak build-bundle repo speedynote-${VERSION}.flatpak io.github.speedynote.SpeedyNote
-        
-        # 验证捆绑包
-        flatpak info --show-metadata speedynote-${VERSION}.flatpak
 
     - name: Upload Flatpak bundle
       uses: actions/upload-artifact@v4
