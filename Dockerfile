@@ -17,25 +17,11 @@ RUN apt-get update && apt-get install -y \
 # 创建工作目录
 WORKDIR /app
 
-# 复制Cargo配置文件（利用Docker缓存）
-COPY Cargo.toml Cargo.lock* ./
-COPY build.rs ./
+# 复制所有项目文件
+COPY . .
 
-# 如果Cargo.lock不存在，生成它
-RUN if [ ! -f Cargo.lock ]; then cargo generate-lockfile; fi
-
-# 创建假的src目录来缓存依赖
-RUN mkdir -p src && echo 'fn main() { println!("Dummy"); }' > src/main.rs
-
-# 构建依赖（利用Docker缓存）
-RUN cargo build --release --locked
-
-# 复制源代码
-COPY src ./src
-COPY tauri.conf.json ./
-
-# 重新构建应用（只编译我们的代码）
-RUN touch src/main.rs && cargo build --release --locked
+# 生成Cargo.lock文件并构建应用
+RUN cargo generate-lockfile && cargo build --release
 
 # 剥离调试符号以减小镜像大小
 RUN strip target/release/speedynote
