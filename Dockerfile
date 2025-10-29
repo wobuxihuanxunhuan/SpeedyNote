@@ -33,7 +33,6 @@ RUN cargo build --release --locked
 # 复制源代码
 COPY src ./src
 COPY tauri.conf.json ./
-COPY src-tauri ./src-tauri
 
 # 重新构建应用（只编译我们的代码）
 RUN touch src/main.rs && cargo build --release --locked
@@ -62,9 +61,6 @@ WORKDIR /app
 
 # 从构建阶段复制二进制文件
 COPY --from=builder /app/target/release/speedynote ./
-
-# 复制前端资源
-COPY --from=builder /app/src-tauri/dist ./dist
 
 # 创建数据目录
 RUN mkdir -p /app/data && chown -R speedynote:speedynote /app
