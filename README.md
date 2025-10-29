@@ -13,8 +13,6 @@
 _A lightweight, fast, and stylus-optimized note-taking app built for classic tablet PCs, low-resolution screens, and
 vintage hardware._
 
-如果您恰好不懂英文，请移步[中文README](./readme/zh_Hans.md)
-
 
 
 ![cover](https://i.imgur.com/4YMM2Fx.png)
@@ -36,40 +34,13 @@ vintage hardware._
 
 ---
 
-## 📸 Screenshots
-
-| Drawing                                  | Dial UI / Joycon Controls               | Overlay Grid Options                     |
-| ---------------------------------------- | --------------------------------------- | ---------------------------------------- |
-| ![draw](https://i.imgur.com/iARL6Vo.gif) | ![pdf](https://i.imgur.com/NnrqOQQ.gif) | ![grid](https://i.imgur.com/YaEdx1p.gif) |
-
----
-
 ## 🚀 Getting Started
 
 ### ✅ Requirements
 
-- Windows 7/8/10/11/Ubuntu/Debian/Fedora/RedHat/ArchLinux/AlpineLinux
-- Qt 5 or Qt 6 runtime (bundled in Windows releases)
+- Docker
+- Tauri runtime (bundled in Windows releases)
 - Stylus input (Wacom recommended)
-
-### 💾 Installation
-
----
-
-#### Windows
-
-Download the installer from [SpeedyNote official site](https://www.speedynote.org) 
-Windows 7 or Windows 8 users may download the 32-bit legacy version instead.  
-
-#### Linux
-
-Download the `deb`,`rpm` `.pkg.tar.zst` or `.apk` packages from [SpeedyNote official site](https://www.speedynote.org) and install them locally, or
-
-For Debian/Ubuntu users, you can get SpeedyNote from `apt.speedynote.org` and run
-```bash
-wget -O- https://apt.speedynote.org/speedynote-release-key.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/speedynote.gpg && echo "deb [arch=amd64,arm64 signed-by=/etc/apt/trusted.gpg.d/speedynote.gpg] https://apt.speedynote.org stable main" | sudo tee /etc/apt/sources.list.d/speedynote.list && sudo apt update && sudo apt install speedynote
-```
-this command to install SpeedyNote to your computer, and update with `sudo apt update && sudo apt upgrade` commands. 
 
 🛠️ Usage
 
@@ -103,17 +74,3 @@ SpeedyNote supports controller input, ideal for tablet users:
   - Create/delete pages
 
 > Long press + turn = hold-and-turn mappings
-
----
-
-## 📁 Building From Source
-
-#### Windows
-
-[Windows Build Documentation](./docs/SpeedyNote_Windows_Build_en.md)  [Windows Build ARM64 Documentation](./docs/SpeedyNote_Windows_ARM64_Build_en.md)
-
-#### Linux
-
-1. run  `./build-package.sh`
-2. Install the packages for your Linux distro.
-   `.deb`, `rpm`, `.pkg.tar.zst` and `.apk` are tested and working.

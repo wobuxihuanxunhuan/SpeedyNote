@@ -1,54 +1,36 @@
-﻿# Prerequisites
-*.d
+# 编译输出
+target/
+**/*.rs.bk
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# 依赖文件
+Cargo.lock
 
-# Precompiled Headers
-*.gch
-*.pch
+# 环境变量文件
+.env
+.env.local
+.env.production
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# 日志文件
+*.log
 
-# Fortran module files
-*.mod
-*.smod
+# 系统文件
+.DS_Store
+Thumbs.db
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# 数据文件
+data/
+notes/
 
-# Executables
-*.exe
-*.out
-*.app
-*.rpm
-*.deb
-*.pkg.tar.zst
-*.apk
-
-# Compressed files
-*.7z
-
-# Editor
-.vs/
-.idea/
-.vscode/
-
-out/
+# 构建产物
+dist/
 build/
-dllpack/
-poppler-24.08.0/
-share/
-old/
-32-bitdll/
-qt6/
-qt5/
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时文件
+*.tmp
+*.temp

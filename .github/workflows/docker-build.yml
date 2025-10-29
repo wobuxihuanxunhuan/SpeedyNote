@@ -1,0 +1,150 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 2 * * 0'  # 每周日凌晨2点自动构建
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: ${{ matrix.platform }}
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.event_name != 'pull_request'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image locally
+      run: |
+        docker build -t speedynote:test .
+
+    - name: Test Docker image
+      run: |
+        # 启动容器
+        docker run --rm -d --name speedynote-test -p 3000:3000 speedynote:test
+        
+        # 等待应用启动
+        sleep 15
+        
+        # 测试健康检查
+        echo "Testing health endpoint..."
+        curl -f http://localhost:3000/health || (docker logs speedynote-test && exit 1)
+        
+        # 测试API端点
+        echo "Testing API endpoint..."
+        curl -f http://localhost:3000/api/notes || (docker logs speedynote-test && exit 1)
+        
+        # 检查容器日志
+        echo "Container logs:"
+        docker logs speedynote-test
+        
+        # 停止容器
+        docker stop speedynote-test
+
+  create-manifest:
+    runs-on: ubuntu-latest
+    needs: [build-and-push, test]
+    if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create manifest and push
+      run: |
+        docker buildx imagetools create \
+          --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+          --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${GITHUB_REF#refs/tags/} \
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-amd64 \
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64
+
+  release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-and-push, test, create-manifest]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          README.md
+          LICENSE
+          PROJECT_README.md
+        generate_release_notes: true

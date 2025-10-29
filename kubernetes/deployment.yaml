@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: speedynote
+  labels:
+    app: speedynote
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: speedynote
+  template:
+    metadata:
+      labels:
+        app: speedynote
+    spec:
+      containers:
+      - name: speedynote
+        image: speedynote:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: RUST_LOG
+          value: "info"
+        - name: PORT
+          value: "3000"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: data-storage
+          mountPath: /app/data
+      volumes:
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: speedynote-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: speedynote-service
+spec:
+  selector:
+    app: speedynote
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: speedynote-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
